@@ -1,0 +1,12 @@
+{
+  "name": "sales-roleplay",
+  "private": true,
+  "scripts": {
+    "build": "node build.js",
+    "start": "node server.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.133.0"
+  }
+}

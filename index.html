@@ -1,0 +1,915 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+<title>สนามซ้อมแชต EasyCRM</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: a sales floor — pipeline ladder on the left, the live chat in the middle, the cheat sheet on the right. */
+:root{
+  --bg:#EEF1F7; --panel:#FFFFFF; --ink:#141B2E; --muted:#5B6479; --line:#D8DEEA;
+  --brand:#1F4FE0; --brand-soft:#E3EAFE; --brand-ink:#FFFFFF;
+  --lead-bubble:#FFFFFF; --chat-bg:#DCE3F0;
+  --win:#0E8F5B; --win-soft:#DDF3E8; --warn:#B86E00; --warn-soft:#FDF0D8; --hot:#C8323C; --hot-soft:#FBE3E4;
+  --display:"Bai Jamjuree",system-ui,sans-serif; --body:"IBM Plex Sans Thai",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --r:14px; color-scheme:light; --sig:#FFE7A3;
+}
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.25}
+button{font:inherit;cursor:pointer}
+button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.eyebrow{font:600 12px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.btn{border:0;border-radius:999px;padding:10px 20px;background:var(--brand);color:var(--brand-ink);font-weight:600}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.btn:disabled{opacity:.5;cursor:default}
+.wrap{max-width:1240px;margin:0 auto;padding-block:20px;display:flex;flex-direction:column;gap:20px;min-height:100%;box-sizing:border-box}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font:700 18px var(--display)}
+.mark{width:30px;height:30px;border-radius:9px;background:var(--brand);display:grid;place-items:center}
+.mark svg{width:18px;height:18px}
+.who{color:var(--muted);font-size:14px;display:flex;gap:12px;align-items:center}
+.demo-flag{background:var(--warn-soft);color:var(--warn);border-radius:999px;padding:4px 12px;font-size:13px;font-weight:600}
+
+/* ---------- login ---------- */
+.login{flex:1;display:grid;place-items:center}
+.login form{background:var(--panel);border-radius:20px;padding:32px;max-width:400px;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;border:1px solid var(--line)}
+.fl{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.login input{font:inherit;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.err{color:var(--hot);font-size:14px;min-height:1em}
+
+/* ---------- lobby ---------- */
+.lobby{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
+.call{background:var(--brand);color:var(--brand-ink);border-radius:22px;padding:28px;display:flex;flex-direction:column;gap:16px;position:relative;overflow:hidden}
+.call h1{font-size:clamp(26px,3.4vw,38px)}
+.call p{margin:0;opacity:.85;max-width:44ch}
+.call .btn{background:var(--brand-ink);color:var(--brand);align-self:flex-start;padding:14px 26px;font-size:16px}
+.ping{position:absolute;right:28px;top:28px;width:14px;height:14px;border-radius:50%;background:var(--brand-ink)}
+.ping::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid var(--brand-ink);animation:ping 1.6s ease-out infinite}
+@keyframes ping{to{transform:scale(3);opacity:0}}
+.rules{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.rules li{background:color-mix(in srgb,var(--brand-ink) 16%,transparent);border-radius:999px;padding:4px 12px;font-size:13px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.kpi b{display:block;font:700 28px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.kpi span{font-size:13px;color:var(--muted)}
+.funnel{display:flex;flex-direction:column;gap:8px}
+.frow{display:grid;grid-template-columns:110px 1fr 36px;gap:10px;align-items:center;font-size:14px}
+.fbar{height:10px;border-radius:5px;background:var(--bg);overflow:hidden}
+.fbar i{display:block;height:100%;background:var(--brand);border-radius:5px}
+.frow:last-child .fbar i{background:var(--win)}
+.frow em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.hist{display:flex;flex-direction:column}
+.hrow{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);background:none;border-left:0;border-right:0;border-bottom:0;color:inherit;text-align:left}
+.hrow .av{font-size:22px;text-align:center}
+.hrow small{display:block;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;white-space:nowrap;background:var(--bg);color:var(--muted)}
+.pill.s5{background:var(--win-soft);color:var(--win)} .pill.s4,.pill.s3{background:var(--brand-soft);color:var(--brand)}
+.empty{color:var(--muted);font-size:14px;padding:12px 0}
+.modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mode{border:0;border-radius:14px;padding:12px 14px;text-align:left;background:color-mix(in srgb,var(--brand-ink) 14%,transparent);color:inherit;display:flex;flex-direction:column;gap:2px}
+.mode b{font-weight:600} .mode small{opacity:.8;font-size:12.5px;line-height:1.4}
+.mode[aria-pressed="true"]{background:var(--brand-ink);color:var(--brand)}
+.call .row2{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.call .link{background:none;border:0;color:inherit;text-decoration:underline;text-underline-offset:3px;padding:0}
+.kpis.k4{grid-template-columns:repeat(4,1fr)}
+/* guide */
+.guide-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.guide-head p{margin:4px 0 0;color:var(--muted);max-width:70ch}
+.groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.gcard{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.gcard h3{display:flex;gap:8px;align-items:center;font-size:18px}
+.gcard p{margin:0;color:var(--muted);font-size:14px}
+.kw{display:flex;flex-wrap:wrap;gap:6px}
+.kw span{background:var(--sig);border-radius:6px;padding:2px 8px;font-size:13px}
+.gcard dl{display:grid;grid-template-columns:72px minmax(0,1fr);gap:6px 10px;margin:0;font-size:13.5px}
+.gcard dt{color:var(--muted)} .gcard dd{margin:0}
+.tabs2{display:flex;gap:6px;flex-wrap:wrap}
+.tabs2 button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:8px 16px;font-weight:600}
+.tabs2 button[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:var(--panel)}
+.stg{display:flex;flex-direction:column;gap:10px} .stg h2{font-size:18px}
+.ex{border-radius:10px;padding:8px 12px;font-size:13.5px;display:flex;flex-direction:column;gap:2px}
+.ex b{font-size:12px} .ex.ok{background:var(--win-soft)} .ex.ok b{color:var(--win)} .ex.no{background:var(--hot-soft)} .ex.no b{color:var(--hot)}
+.src{color:var(--muted);font-size:12px}
+.ideas{display:flex;flex-direction:column;gap:6px;padding:10px;background:var(--panel);border-top:1px solid var(--line);max-height:42%;overflow-y:auto}
+.ideas .ih{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--muted)}
+.ideas .ih button{border:0;background:none;color:var(--muted);font-size:13px}
+.idea{border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:var(--bg);text-align:left;color:var(--ink);display:flex;flex-direction:column;gap:3px;font-size:14px}
+.idea:hover{border-color:var(--brand)} .idea .tg{font-size:11.5px;font-weight:600;color:var(--brand)} .idea .wy{font-size:12px;color:var(--muted)}
+.tac{display:flex;flex-direction:column;gap:8px}
+.tac div{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;font-size:14px}
+.say{background:var(--bg);border-radius:12px 12px 12px 4px;padding:8px 12px;font-size:13.5px}
+/* signals */
+mark.sig{background:var(--sig);color:inherit;border-radius:4px;padding:0 2px}
+.b.admin mark.sig{background:transparent}
+.hint{align-self:flex-start;max-width:76%;font-size:12.5px;color:var(--warn);background:var(--warn-soft);border-radius:10px;padding:5px 10px;margin:2px 0 4px}
+/* guess */
+.guess{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.guess .opts{display:flex;flex-wrap:wrap;gap:6px}
+.guess button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:6px 12px;font-size:13px;min-height:34px}
+.guess button[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.mode-tag{font-size:12px;border-radius:999px;padding:2px 10px;background:var(--brand-soft);color:var(--brand);font-weight:600;white-space:nowrap}
+.mode-tag.real{background:var(--hot-soft);color:var(--hot)}
+.sheet details{border-top:1px solid var(--line);padding-top:10px}
+.sheet summary{cursor:pointer;font:600 15px var(--display)}
+.qg{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.qg div b{display:block} .qg div span{color:var(--muted)}
+/* result: read */
+.read{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:start}
+.read .gi{font-size:44px;line-height:1}
+.ok{color:var(--win);font-weight:600} .no{color:var(--hot);font-weight:600}
+.sr{display:flex;flex-direction:column;gap:8px}
+.sr div{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;font-size:14px}
+.ttable{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.ttable th,.ttable td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.ttable th:first-child,.ttable td:first-child{text-align:left}
+.ttable th{color:var(--muted);font-weight:500;font-size:13px}
+.btn.mini{padding:5px 12px;font-size:13px}
+.notice{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:10px 14px;font-size:14px}
+.replay{max-height:460px;overflow-y:auto;background:var(--chat-bg);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:6px}
+
+/* ---------- arena ---------- */
+.arena{display:grid;grid-template-columns:230px minmax(0,1fr) 290px;gap:16px;flex:1;min-height:0}
+.ladder{display:flex;flex-direction:column;gap:6px}
+.step{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;color:var(--muted);position:relative}
+.step .dot{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:600 13px var(--mono);box-shadow:inset 0 0 0 2px var(--line);background:var(--panel)}
+.step b{font-weight:600;font-size:14px;color:inherit} .step small{display:block;font-size:12px;line-height:1.35}
+.step.done{color:var(--ink)} .step.done .dot{background:var(--brand);color:var(--brand-ink);box-shadow:none}
+.step.next{background:var(--brand-soft);color:var(--ink)} .step.next .dot{box-shadow:inset 0 0 0 2px var(--brand);color:var(--brand)}
+.step.goal.done .dot{background:var(--win)}
+.step.flash{animation:flash 1s ease}
+@keyframes flash{0%{background:var(--win-soft)}100%{background:transparent}}
+.leadbox{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.leadbox strong{color:var(--ink);font-weight:600}
+
+.chat{background:var(--chat-bg);border-radius:20px;display:flex;flex-direction:column;min-height:520px;max-height:calc(100vh - 120px);overflow:hidden;border:1px solid var(--line)}
+.chead{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+.chead .av{width:40px;height:40px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-size:22px;flex:none}
+.chead .nm{flex:1;min-width:0} .chead .nm b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chead .nm small{color:var(--muted);font-size:12px}
+.wait{font:500 13px var(--mono);padding:5px 10px;border-radius:999px;background:var(--bg);color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.wait.w1{background:var(--warn-soft);color:var(--warn)} .wait.w2{background:var(--hot-soft);color:var(--hot)}
+.msgs{flex:1;overflow-y:auto;padding:18px 16px;display:flex;flex-direction:column;gap:6px}
+.sys{align-self:center;font-size:12px;color:var(--muted);background:color-mix(in srgb,var(--panel) 60%,transparent);border-radius:999px;padding:3px 12px;margin:6px 0;text-align:center}
+.b{max-width:76%;padding:9px 13px;border-radius:18px;white-space:pre-wrap;overflow-wrap:anywhere;animation:pop .18s ease-out}
+.b.lead{align-self:flex-start;background:var(--lead-bubble);border-bottom-left-radius:6px}
+.b.admin{align-self:flex-end;background:var(--brand);color:var(--brand-ink);border-bottom-right-radius:6px}
+.b.lead+.b.admin,.b.admin+.b.lead{margin-top:8px}
+.meta{font-size:11px;color:var(--muted);align-self:flex-end;margin-top:-2px}
+@keyframes pop{from{transform:translateY(4px);opacity:.3}}
+.typing{align-self:flex-start;background:var(--lead-bubble);border-radius:18px;padding:12px 14px;display:flex;gap:4px}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:blink 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes blink{50%{opacity:.25}}
+.delays{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px 10px;background:var(--panel);border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.delays span{flex-basis:100%}
+.delays button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:5px 11px;font-size:12.5px;min-height:32px}
+.delays button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--panel)}
+.seen{font-size:11px;color:var(--muted);align-self:flex-end;margin-top:-2px}
+.compose{display:flex;gap:8px;padding:10px;background:var(--panel);border-top:1px solid var(--line);align-items:flex-end}
+.compose textarea{flex:1;resize:none;font:inherit;border:1px solid var(--line);border-radius:18px;padding:9px 14px;background:var(--bg);color:var(--ink);max-height:140px;min-height:42px;box-sizing:border-box}
+.compose .send{width:42px;height:42px;border-radius:50%;border:0;background:var(--brand);color:var(--brand-ink);display:grid;place-items:center;flex:none}
+.compose .send svg{width:18px;height:18px}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.bar small{color:var(--muted)}
+
+.sheet{display:flex;flex-direction:column;gap:14px;font-size:13.5px;overflow-y:auto;max-height:calc(100vh - 120px)}
+.sheet h3{font-size:15px}
+.sheet ol,.sheet ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.ptable{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.ptable th,.ptable td{padding:5px 4px;border-bottom:1px solid var(--line);text-align:right}
+.ptable th:first-child,.ptable td:first-child{text-align:left;color:var(--muted);font-weight:500}
+.ptable thead th{font-weight:600}
+.obj{display:flex;flex-direction:column;gap:8px}
+.obj div b{display:block;font-weight:600}
+.obj div span{color:var(--muted)}
+.tabs{display:none}
+
+/* ---------- result ---------- */
+.result{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.score{grid-column:1/-1;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:24px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:24px;align-items:center}
+.big{font:700 64px/1 var(--display);font-variant-numeric:tabular-nums}
+.big small{font-size:24px;color:var(--muted)}
+.score h2{font-size:24px}
+.score p{margin:6px 0 0;color:var(--muted);max-width:70ch}
+.track{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:14px}
+.track div{height:8px;border-radius:4px;background:var(--bg)}
+.track div.on{background:var(--brand)} .track.win div.on{background:var(--win)}
+.track-l{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;font-size:12px;color:var(--muted);margin-top:4px}
+.handoff{border:1.5px dashed var(--brand);background:var(--panel)}
+.handoff dl{display:grid;grid-template-columns:130px minmax(0,1fr);gap:6px 12px;margin:0;font-size:14px}
+.handoff dt{color:var(--muted)} .handoff dd{margin:0}
+.miss{color:var(--hot)}
+.grade{font:700 13px var(--mono);border-radius:6px;padding:2px 8px;background:var(--brand-soft);color:var(--brand)}
+.lst{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.good li::marker{color:var(--win)} .bad li::marker{color:var(--warn)}
+.tp{display:flex;flex-direction:column;gap:8px}
+.tp .b{max-width:100%;animation:none}
+.tp .b.better{align-self:flex-end;background:var(--win);color:var(--brand-ink)}
+.reveal{background:var(--bg);border-radius:10px;padding:12px 14px;white-space:pre-wrap;font-size:13.5px;max-height:280px;overflow-y:auto}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips span{background:var(--bg);border-radius:999px;padding:3px 10px;font-size:12px}
+.fe{display:flex;flex-direction:column;gap:6px;font-size:14px}
+.fe div{background:var(--hot-soft);border-radius:10px;padding:8px 12px}
+.span2{grid-column:1/-1}
+.loading{display:grid;place-items:center;gap:12px;padding:60px 0;color:var(--muted);text-align:center}
+.spin{width:28px;height:28px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--brand);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.sheet-toggle,.sheet-close{display:none}
+.groups{grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr))}
+.chat{height:calc(100dvh - 150px)}
+
+/* Tablet: cheat sheet becomes a slide-up drawer so the chat keeps the width. */
+@media (max-width:1080px){
+  .arena{grid-template-columns:210px minmax(0,1fr)}
+  .chat{height:calc(100dvh - 200px)}
+  .leadbox{display:none}
+  .sheet-toggle{display:inline-flex}
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:20;max-height:78dvh;border-radius:20px 20px 0 0;
+    box-shadow:0 -12px 40px rgba(20,27,46,.18);transform:translateY(105%);transition:transform .25s ease;
+    padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));
+    padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))}
+  .sheet.open{transform:none}
+  .sheet-close{display:block;position:sticky;top:0;align-self:flex-end;border:0;background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 14px;font-weight:600}
+  .scrim{position:fixed;inset:0;background:rgba(20,27,46,.35);z-index:19}
+}
+
+/* Phone: one column, compact pipeline on top, chat fills the screen. */
+@media (max-width:760px){
+  body{font-size:15px}
+  .wrap{padding-block:12px;gap:12px}
+  .brand{font-size:16px} .mark{width:26px;height:26px}
+  #whoName{display:none}
+  .who .btn{padding:7px 14px;font-size:14px}
+  .modes{grid-template-columns:1fr} .kpis.k4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .read{grid-template-columns:minmax(0,1fr)}
+  .lobby,.result{grid-template-columns:minmax(0,1fr)}
+  .call{padding:22px;border-radius:18px}
+  .call .row2 .btn{flex:1;text-align:center}
+  .hrow{grid-template-columns:28px minmax(0,1fr)} .hrow .pill{grid-column:2;justify-self:start}
+  .arena{grid-template-columns:minmax(0,1fr);gap:10px}
+  .ladder-card{padding:10px 12px;gap:8px}
+  .ladder-card>.eyebrow,.leadbox{display:none}
+  .ladder{flex-direction:row;gap:2px}
+  .step{grid-template-columns:1fr;justify-items:center;text-align:center;padding:4px 0;gap:3px}
+  .step .dot{width:24px;height:24px;font-size:12px}
+  .step small{display:none}
+  .step b{font-size:11px;line-height:1.2}
+  .guess{padding-top:8px;gap:6px}
+  .guess .opts{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -12px;padding:0 12px 2px}
+  .guess .opts::-webkit-scrollbar{display:none}
+  .guess button{flex:none}
+  .chat{height:calc(100dvh - 290px);min-height:340px;border-radius:16px}
+  .chead{padding:10px 12px;gap:10px} .chead .av{width:34px;height:34px;font-size:18px}
+  .mode-tag{display:none}
+  .b{max-width:86%} .hint{max-width:86%}
+  .compose textarea{font-size:16px} /* 16px stops iOS from zooming into the field */
+  .bar small{display:none}
+  .bar .btn{flex:1;white-space:nowrap;padding:9px 10px} .lg{display:none}
+  .score{grid-template-columns:minmax(0,1fr);padding:20px} .big{font-size:52px}
+  .track-l{font-size:10.5px}
+  .handoff dl{grid-template-columns:minmax(0,1fr)} .handoff dd{margin-bottom:6px}
+  .frow{grid-template-columns:96px 1fr 28px}
+  .guide-head .btn{width:100%}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head><body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="var(--brand-ink)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l5-5 4 3 7-8"/></svg></span>สนามซ้อมแชต</div>
+    <div class="who"><span id="demoFlag" class="demo-flag" hidden>โหมดตัวอย่าง</span><span id="whoName"></span><button id="teamBtn" class="btn ghost" hidden>ดูทีม</button><button id="homeBtn" class="btn ghost" hidden>หน้าหลัก</button><button id="logoutBtn" class="btn ghost" hidden>ออกจากระบบ</button></div>
+  </header>
+
+  <!-- login -->
+  <section id="vLogin" class="login" hidden>
+    <form id="loginForm">
+      <h2>เข้าสนามซ้อม</h2>
+      <div class="tabs2" role="tablist"><button type="button" role="tab" id="tabLogin" aria-selected="true">เข้าสู่ระบบ</button><button type="button" role="tab" id="tabReg" aria-selected="false">สมัครใหม่</button></div>
+      <label class="fl" for="nameInput">ชื่อผู้ใช้<input id="nameInput" autocomplete="username" placeholder="เช่น ฝ้าย" maxlength="40"></label>
+      <label class="fl" for="passInput">รหัสผ่าน<input id="passInput" type="password" autocomplete="current-password" placeholder="อย่างน้อย 4 ตัว"></label>
+      <label class="fl" for="codeInput" id="codeRow" hidden>รหัสทีม<input id="codeInput" autocomplete="off" placeholder="ขอจากหัวหน้าทีม"></label>
+      <div class="err" id="loginErr"></div>
+      <button class="btn" type="submit" id="loginSubmit">เข้าสู่ระบบ</button>
+      <small style="color:var(--muted)">ผลซ้อมเก็บไว้ใต้บัญชีของคุณ คนอื่นในทีมมองไม่เห็น ยกเว้นหัวหน้าทีม</small>
+    </form>
+  </section>
+
+  <!-- lobby -->
+  <section id="vLobby" hidden>
+    <div class="lobby">
+      <div class="call">
+        <span class="ping" aria-hidden="true"></span>
+        <span class="eyebrow" style="color:inherit;opacity:.8">ลีดจากโฆษณา EasyCRM</span>
+        <h1>มีลีดใหม่ทักเข้ามา</h1>
+        <p>ทุกรอบคือคนใหม่ ธุรกิจใหม่ นิสัยใหม่ บางคนร้อน บางคนแค่ดู บางคนไม่ใช่กลุ่มเป้าหมาย พาเขาไปให้ถึงนัดเดโม่กับเซลส์</p>
+        <ul class="rules"><li>ทัก</li><li>คุย</li><li>รู้ความต้องการ</li><li>ได้คอนแทค</li><li>นัดเดโม่ = สำเร็จ</li></ul>
+        <div class="modes" role="group" aria-label="โหมดซ้อม">
+          <button class="mode" id="mPractice" aria-pressed="true"><b>โหมดฝึก</b><small>ไฮไลต์คีย์เวิร์ดของลีดพร้อมคำใบ้ว่าควรตอบแบบไหน</small></button>
+          <button class="mode" id="mReal" aria-pressed="false"><b>โหมดจริง</b><small>ไม่มีคำใบ้ ต้องจับวิสัยเองและเดากลุ่มลีด</small></button>
+          <button class="mode" id="mGhost" aria-pressed="false"><b>ชาเลนจ์ ลีดเงียบ 👻</b><small>ทักมาว่า "สนใจ" แล้วเงียบ ฝึก follow-up ให้เขาตอบกลับ</small></button>
+        </div>
+        <div class="row2"><button class="btn" id="startBtn">รับแชต</button><button class="link" id="guideBtn">กลยุทธ์การพิมพ์ & กลุ่มลีด</button></div>
+        <div class="err" id="startErr" style="color:inherit"></div>
+        <div class="notice" id="localNote" hidden>เข้าแบบไม่ระบุตัวตน ผลซ้อมรอบนี้จะไม่ถูกบันทึก</div>
+      </div>
+      <div class="card">
+        <span class="eyebrow">ผลซ้อมของคุณ</span>
+        <div class="kpis k4">
+          <div class="kpi"><b id="kTotal">0</b><span>แชตที่ซ้อม</span></div>
+          <div class="kpi"><b id="kDemo">–</b><span>นัดเดโม่สำเร็จ</span></div>
+          <div class="kpi"><b id="kAvg">–</b><span>คะแนนเฉลี่ย / 100</span></div>
+          <div class="kpi"><b id="kRead">–</b><span>จับวิสัยถูก (โหมดจริง)</span></div>
+        </div>
+        <div class="funnel" id="funnel"></div>
+      </div>
+      <div class="card span2">
+        <span class="eyebrow">แชตที่ผ่านมา</span>
+        <div class="hist" id="hist"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- guide -->
+  <section id="vGuide" hidden>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="tabs2" role="tablist"><button role="tab" id="tabStrat" aria-selected="true">กลยุทธ์การพิมพ์ขายผ่านแชต</button><button role="tab" id="tabGroups" aria-selected="false">กลุ่มลีดและคีย์เวิร์ด</button></div>
+      <div id="paneStrat">
+        <div class="guide-head"><div><span class="eyebrow">Conversational Selling</span><h1 style="font-size:28px">พิมพ์ยังไงให้ลีดอยากคุยต่อและอยากใช้</h1>
+          <p>ในแชต ลีดไม่ได้ตัดสินใจจากรายการฟีเจอร์ แต่จากความรู้สึกว่ามีคนเข้าใจร้านของเขา และเห็นภาพว่าชีวิตดีขึ้นยังไง เรียงตามขั้นของ pipeline แต่ละข้อมีตัวอย่างที่ควรพิมพ์และไม่ควรพิมพ์</p></div>
+          <button class="btn guideStart">ลองซ้อมเลย</button></div>
+        <div id="strats" style="display:flex;flex-direction:column;gap:18px;margin-top:16px"></div>
+      </div>
+      <div id="paneGroups" hidden>
+        <div class="guide-head"><div><span class="eyebrow">คู่มือจับวิสัยลีด</span><h1 style="font-size:28px">กลุ่มลีดที่ทักเข้ามา</h1>
+          <p>ฟังคีย์เวิร์ดในข้อความลีดเพื่อรู้ว่าเขาอยู่กลุ่มไหน แล้วเลือกวิธีตอบที่พาไปถึงนัดเดโม่ ลีดจริงอาจมีลักษณะของหลายกลุ่มปนกัน ให้ดูกลุ่มที่เด่นที่สุด</p></div>
+          <button class="btn guideStart">ลองซ้อมเลย</button></div>
+        <div class="groups" id="groups" style="margin-top:16px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- arena -->
+  <section id="vArena" hidden>
+    <div class="arena">
+      <aside class="card ladder-card">
+        <span class="eyebrow">Pipeline</span>
+        <div class="ladder" id="ladder"></div>
+        <div class="guess"><span class="eyebrow">ลีดคนนี้น่าจะเป็นกลุ่มไหน</span><div class="opts" id="guessOpts"></div></div>
+        <div class="leadbox" id="leadbox"></div>
+      </aside>
+      <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+        <div class="chat">
+          <div class="chead">
+            <div class="av" id="cAv"></div>
+            <div class="nm"><b id="cName"></b><small id="cSrc"></small></div>
+            <span class="mode-tag" id="modeTag"></span>
+            <span class="wait" id="wait" title="ลีดรอคุณมานานแค่ไหน">0:00</span>
+          </div>
+          <div class="msgs" id="msgs" aria-live="polite"></div>
+          <div class="ideas" id="ideas" hidden></div>
+          <div class="delays" id="delayRow" hidden><span>ลีดยังไม่ตอบ · ส่งข้อความถัดไปเมื่อไหร่</span>
+            <button type="button" data-d="now" aria-pressed="true">ตอนนี้</button><button type="button" data-d="1h" aria-pressed="false">อีก 1 ชม.</button><button type="button" data-d="evening" aria-pressed="false">ตอนเย็น</button><button type="button" data-d="tomorrow" aria-pressed="false">พรุ่งนี้เช้า</button><button type="button" data-d="3d" aria-pressed="false">อีก 3 วัน</button></div>
+          <form class="compose" id="compose">
+            <textarea id="txt" rows="1" placeholder="พิมพ์ตอบลีด… (Enter ส่ง · Shift+Enter ขึ้นบรรทัด)"></textarea>
+            <button class="send" id="sendBtn" aria-label="ส่ง"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>
+          </form>
+        </div>
+        <div class="bar"><small>ตอบภายใน 5 นาทีถือว่าปกติ เกินจากนั้นหักนาทีละ 2 คะแนน และลีดจะเย็นลง</small><button class="btn ghost" id="ideaBtn" type="button" hidden>💡 <span class="lg">ขอ</span>ไอเดีย</button><button class="btn ghost sheet-toggle" id="sheetBtn" type="button">โพย<span class="lg">ข้างโต๊ะ</span></button><button class="btn ghost" id="endBtn">จบแชต<span class="lg">และดูผล</span></button></div>
+      </div>
+      <div class="scrim" id="scrim" hidden></div>
+      <aside class="card sheet" id="sheet" aria-label="โพยข้างโต๊ะ">
+        <button class="sheet-close" id="sheetClose" type="button">ปิด</button>
+        <span class="eyebrow">โพยข้างโต๊ะ</span>
+        <details open><summary>กลยุทธ์ตามขั้น</summary><div class="qg" id="qs"></div></details>
+        <details id="qgWrap"><summary>คีย์เวิร์ด → กลุ่ม → วิธีตอบ</summary><div class="qg" id="qg"></div></details>
+        <div><h3>5 คำถามหาความต้องการ</h3>
+          <ol><li>ตอนนี้เก็บข้อมูลลูกค้าไว้ที่ไหน</li><li>รู้ไหมว่าลูกค้าประจำคนไหนเริ่มหาย</li><li>ส่งโปรเลือกกลุ่มได้ไหม</li><li>มีวิธีดึงลูกค้าใหม่ให้กลับมาซ้ำไหม</li><li>มีแจ้งเตือนแพ็กเกจ/คอร์สใกล้หมดไหม</li></ol></div>
+        <div><h3>แพ็กเกจ (บาท/ปี ไม่รวม VAT)</h3>
+          <div style="overflow-x:auto"><table class="ptable">
+            <thead><tr><th></th><th>Starter</th><th>Plus</th><th>Premium</th></tr></thead>
+            <tbody><tr><td>ราคา</td><td>15,588</td><td>23,988</td><td>35,988</td></tr>
+            <tr><td>สลิป/เดือน</td><td>1,500</td><td>2,800</td><td>5,000</td></tr>
+            <tr><td>Admin</td><td>2</td><td>5</td><td>10</td></tr>
+            <tr><td>Tier</td><td>3</td><td>4</td><td>6</td></tr></tbody></table></div>
+          <small style="color:var(--muted)">ทดลองฟรี 14 วัน (15 สลิป, ไม่มี Broadcast/Rich Menu) · Enterprise ตามสัญญา</small></div>
+        <div class="obj"><h3>รับมือข้อโต้แย้ง</h3>
+          <div><b>"มี LINE OA แล้ว"</b><span>LINE คือช่องทาง EasyCRM คือสมองที่บอกว่าควรคุยกับใคร เมื่อไหร่</span></div>
+          <div><b>"ใช้ Excel อยู่"</b><span>Excel เก็บได้ แต่ไม่เตือน ไม่แบ่งกลุ่ม ไม่ส่งโปรให้</span></div>
+          <div><b>"แพง"</b><span>ถามยอดต่อหัว × ลูกค้าที่หาย/เดือน แล้วเทียบกับค่าระบบ</span></div>
+          <div><b>"ไม่อยากให้เบอร์"</b><span>บอกเหตุผลว่าขอไปทำอะไร ให้เลือกเวลาโทรเอง หรือรับเป็น LINE ID</span></div></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- team (artifact runtime, owner/editors) -->
+  <section id="vTeam" hidden>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div><span class="eyebrow">หัวหน้าทีม</span><h1 style="font-size:28px">ผลซ้อมของทีม</h1></div>
+      <div class="card"><div style="overflow-x:auto"><table class="ttable" id="teamTable"></table></div></div>
+      <div class="card"><span class="eyebrow">แชตล่าสุดของทีม</span><div class="hist" id="teamHist"></div></div>
+      <div class="card" id="members" style="gap:10px"></div>
+    </div>
+  </section>
+
+  <!-- result -->
+  <section id="vResult" hidden></section>
+</div>
+
+<script src="groups.js"></script>
+<script src="strategies.js"></script>
+<script src="engine.js"></script>
+<script>
+const STAGES = ['ทัก','คุย','รู้ความต้องการ','ได้คอนแทค','นัดเดโม่'];
+const STAGE_HINT = ['ตอบลีดครั้งแรก','ลีดตอบกลับมา','เขาเล่าธุรกิจและปัญหา','ได้เบอร์หรือ LINE ID','ตกลงวันเวลาเดโม่'];
+const REASON = { demo:'นัดเดโม่สำเร็จ', left:'ลีดเงียบหายไป', disqualified:'คัดออกถูกต้อง (ไม่ใช่กลุ่มเป้าหมาย)', admin_ended:'คุณจบแชตเอง', limit:'ครบ 40 ข้อความ', ghosted:'ลีดอ่านแล้วเงียบหาย' };
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const GRACE = 300, PER_MIN = 2; // ตอบภายใน 5 นาทีถือว่าปกติ เกินจากนั้นหักนาทีละ 2 คะแนน
+const late = sec => sec > GRACE ? Math.ceil((sec - GRACE) / 60) * PER_MIN : 0;
+const store = { get(k){ try{ return localStorage.getItem(k) }catch{ return null } }, set(k,v){ try{ v==null?localStorage.removeItem(k):localStorage.setItem(k,v) }catch{} } };
+
+let DEMO = false, token = store.get('rp:token'), me = null, S = null, busy = false, shown = 0, waitTimer = null;
+
+const G = Object.fromEntries((window.GROUPS || []).map(g => [g.id, g]));
+let MODE = ['real','ghost'].includes(store.get('rp:mode')) ? store.get('rp:mode') : 'practice';
+function setMode(m){ MODE = m; store.set('rp:mode', m); $('mPractice').setAttribute('aria-pressed', m === 'practice'); $('mReal').setAttribute('aria-pressed', m === 'real'); $('mGhost').setAttribute('aria-pressed', m === 'ghost'); }
+// Find each signal phrase in the raw text, merge overlaps, then escape piece by piece.
+function marked(text, signals){
+  const t = String(text ?? ''), spans = [];
+  for (const sg of signals || []) { const q = String(sg.quote || ''); if (!q) continue; let i = t.indexOf(q); while (i >= 0) { spans.push([i, i + q.length]); i = t.indexOf(q, i + q.length); } }
+  spans.sort((a, b) => a[0] - b[0]);
+  let out = '', at = 0;
+  for (const [a, b] of spans) { if (b <= at) continue; const from = Math.max(a, at); out += esc(t.slice(at, from)) + '<mark class="sig">' + esc(t.slice(from, b)) + '</mark>'; at = b; }
+  return out + esc(t.slice(at));
+}
+// Numbers come from stored documents a trainee can write: coerce before they reach HTML.
+const num = v => Number.isFinite(Number(v)) ? Number(v) : 0;
+function clean(x){
+  if (!x) return x;
+  x.stage = Math.max(0, Math.min(5, Math.round(num(x.stage))));
+  for (const k of ['score','late','penalty','turns','started','ended']) if (x[k] != null) x[k] = num(x[k]);
+  if (Array.isArray(x.messages)) for (const m of x.messages) if (m.waited != null) m.waited = num(m.waited);
+  return x;
+}
+const isLead = () => !!((LOCAL && LOCAL.lead) || (me && me.role === 'admin'));
+function show(v){ sheet(false); delete $('homeBtn').dataset.sure; $('homeBtn').textContent = 'หน้าหลัก'; $('teamBtn').hidden = !isLead() || v === 'vTeam'; $('logoutBtn').hidden = !(token && !LOCAL && !DEMO) || v !== 'vLobby'; for (const id of ['vLogin','vLobby','vGuide','vArena','vResult','vTeam']) $(id).hidden = id !== v; $('homeBtn').hidden = v === 'vLogin' || v === 'vLobby'; window.scrollTo(0,0); }
+
+async function api(path, payload){
+  if (LOCAL) return localApi(path, payload);
+  if (DEMO) return demoApi(path, payload);
+  const r = await fetch('/api/' + path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token, ...payload }) });
+  const j = await r.json().catch(() => ({ error:'เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ' }));
+  if (r.status === 401 && path !== 'auth') { store.set('rp:token', null); token = null; show('vLogin'); }
+  if (!r.ok) throw new Error(j.error || 'เกิดข้อผิดพลาด');
+  return j;
+}
+
+/* ---------- boot ---------- */
+async function boot(){
+  try {
+    const r = await fetch('/api/auth', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'me', token }) });
+    if (!(r.headers.get('content-type') || '').includes('json')) throw 0;
+    if (r.ok) { me = (await r.json()).user; return lobby(); }
+    return show('vLogin');
+  } catch {
+    // No team server here: inside the Claude app the lead runs on the viewer's own Claude.
+    if (await startLocal()) return lobby();
+    DEMO = true; $('demoFlag').hidden = false; me = { name:'ตัวอย่าง' }; lobby();
+  }
+}
+
+/* ---------- artifact runtime: Claude via the viewer's account, history in the artifact's db ---------- */
+let LOCAL = null;
+const SAMPLE_ERR = { not_granted:'ต้องกดอนุญาตให้หน้านี้ใช้ Claude ก่อน ลีดถึงจะตอบได้ (รีเฟรชหน้าแล้วกดอนุญาต)', rate_limited:'ใช้ Claude ถี่เกินไปหรือถึงลิมิตการใช้งาน รอสักครู่แล้วลองใหม่', sampling_disabled:'บัญชีนี้ใช้ Claude ในหน้านี้ไม่ได้', session_expired:'ต้องเข้าสู่ระบบ Claude ใหม่', invalid_json:'ลีดตอบกลับมาผิดรูปแบบ ลองส่งอีกครั้ง', refused:'Claude ไม่ตอบข้อความนี้ ลองเปลี่ยนคำพูด' };
+async function startLocal(){
+  if (!window.claude || !window.claude.use || !window.LeadEngine) return false;
+  const sample = await claude.use('sample');
+  if (!sample) return false;
+  const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
+  const meInfo = user ? await user.me() : null;
+  const uid = meInfo && meInfo.id;
+  LOCAL = { sample, db: uid ? db : null, user, uid, cache: new Map(),
+    lead: user ? (await user.isOwner() || await user.canEdit()) : false };
+  me = { id: uid, name: (meInfo && meInfo.name) || 'คุณ' };
+  return true;
+}
+// The engine's ask(): one memoryless JSON call on the viewer's Claude.
+async function localAsk({ kind, system, prompt, schema }){
+  try {
+    return await LOCAL.sample.json(`${system}\n\n=====\n\n${prompt}\n\nตอบกลับเป็น JSON object เดียวเท่านั้น ตาม JSON Schema นี้ ทุก field ต้องมี:\n${JSON.stringify(schema)}`,
+      { cache:false, modelTier:'default', effort: kind === 'coach' ? 'medium' : 'low' });
+  } catch (e) { throw new Error(SAMPLE_ERR[e && e.code] || 'เชื่อมต่อ Claude ไม่สำเร็จ ลองใหม่อีกครั้ง'); }
+}
+const runDoc = uid => LOCAL.db.doc('runs/' + uid);
+const sesDoc = (uid, id) => LOCAL.db.doc('runs/' + uid + '/s/' + id);
+async function saveLocal(s){
+  LOCAL.cache.set(s.id, s);
+  if (!LOCAL.db) return;
+  try { await sesDoc(LOCAL.uid, s.id).set(JSON.parse(JSON.stringify(s))); } catch (e) { console.warn('session save failed', e); }
+  try {
+    const snap = await runDoc(LOCAL.uid).get();
+    const list = ((snap.exists && snap.data().sessions) || []).filter(x => x.id !== s.id);
+    await runDoc(LOCAL.uid).set({ sessions: [LeadEngine.summary(s), ...list].slice(0, 300) });
+  } catch (e) { console.warn('index save failed', e); }
+}
+async function loadLocal(uid, id){
+  if (uid === LOCAL.uid && LOCAL.cache.has(id)) return LOCAL.cache.get(id);
+  if (!LOCAL.db) return null;
+  const snap = await sesDoc(uid, id).get();
+  return snap.exists ? JSON.parse(JSON.stringify(snap.data())) : null;
+}
+async function localApi(path, p){
+  const E = LeadEngine;
+  if (path === 'auth') return { user: me };
+  if (p.action === 'start') { const s = await E.start(localAsk, { user: LOCAL.uid || 'guest', mode: p.mode, challenge: p.challenge }); await saveLocal(s); return E.view(s); }
+  if (p.action === 'mine') {
+    if (!LOCAL.db) return { sessions: [...LOCAL.cache.values()].map(E.summary).reverse() };
+    const snap = await runDoc(LOCAL.uid).get();
+    return { sessions: (snap.exists && snap.data().sessions) || [] };
+  }
+  const s = await loadLocal(LOCAL.uid, p.id);
+  if (!s) throw new Error('ไม่พบแชตนี้');
+  if (p.action === 'get') return E.view(s);
+  if (p.guess !== undefined && !s.ended) s.guess = p.guess;
+  if (p.action === 'guess') { LOCAL.cache.set(s.id, s); return { ok:true }; }
+  if (p.action === 'say') {
+    if (s.ended) throw new Error('แชตนี้จบแล้ว');
+    try { await E.say(localAsk, s, p.text, { delay: p.delay }); }
+    catch (e) { s.messages.pop(); throw e; } // the lead never answered: let the admin resend
+    await saveLocal(s); return E.view(s);
+  }
+  if (p.action === 'end') { if (!s.ended) { await E.finish(localAsk, s); await saveLocal(s); } return E.view(s); }
+  if (p.action === 'suggest') return { ideas: await E.suggest(localAsk, s) };
+}
+
+/* ---------- team view (owner/editors, artifact runtime) ---------- */
+$('teamBtn').onclick = team;
+async function team(){
+  show('vTeam'); $('teamTable').innerHTML = '<tr><td>กำลังโหลด…</td></tr>'; $('teamHist').innerHTML = ''; $('members').innerHTML = ''; $('members').hidden = !!LOCAL;
+  let rows = [], nm, open;
+  if (LOCAL) {
+    try { rows = (await LOCAL.db.collection('runs').get()).docs.map(d => ({ uid: d.id, list: (Array.isArray(d.data().sessions) ? d.data().sessions : []).map(clean) })); } catch {}
+    const ps = LOCAL.user ? await LOCAL.user.profiles(rows.map(r => r.uid)) : {};
+    nm = uid => (ps[uid] && ps[uid].name) || 'สมาชิกทีม';
+    open = (uid, id) => loadLocal(uid, id).then(s => s && LeadEngine.view(s));
+  } else {
+    const names = {}, by = {};
+    try { for (const x of (await api('admin', { action:'list' })).sessions || []) { names[x.user] = x.userName; (by[x.user] ||= []).push(clean(x)); } } catch {}
+    rows = Object.entries(by).map(([uid, list]) => ({ uid, list }));
+    nm = uid => names[uid] || uid;
+    open = (uid, id) => api('admin', { action:'get', id }).then(s => LeadEngine.view(s));
+    members();
+  }
+  const stats = rows.map(r => { const d = r.list.filter(x => x.ended), n = d.length || 1, reals = d.filter(x => x.mode === 'real' && x.readOk != null);
+    return { ...r, n: d.length, demo: d.filter(x => x.stage >= 5).length, score: Math.round(d.reduce((a,x) => a + (x.score ?? 0), 0) / n),
+      read: reals.length ? Math.round(reals.filter(x => x.readOk).length / reals.length * 100) + '%' : '–', late: d.reduce((a,x) => a + (x.late || 0), 0) }; })
+    .filter(r => r.n).sort((a,b) => b.score - a.score);
+  $('teamTable').innerHTML = '<tr><th>แอดมิน</th><th>แชตที่ซ้อม</th><th>นัดเดโม่</th><th>คะแนนเฉลี่ย</th><th>จับวิสัยถูก</th><th>ตอบช้า &gt;5 นาที</th></tr>' +
+    (stats.map(r => `<tr><td></td><td>${r.n}</td><td>${r.demo}</td><td>${r.score}</td><td>${r.read}</td><td>${r.late}</td></tr>`).join('') || '<tr><td colspan="6">ยังไม่มีใครซ้อม</td></tr>');
+  [...$('teamTable').querySelectorAll('tr')].slice(1).forEach((tr, i) => { if (stats[i]) tr.firstChild.textContent = nm(stats[i].uid); });
+  const all = rows.flatMap(r => r.list.map(x => ({ ...x, uid: r.uid }))).filter(x => x.ended).sort((a,b) => b.started - a.started).slice(0, 60);
+  $('teamHist').innerHTML = all.map(x => `<button class="hrow" data-u="${esc(x.uid)}" data-id="${esc(x.id)}"><span class="av">${esc(x.avatar)}</span>
+    <span style="min-width:0"><b class="tn"></b><small>${esc((G[x.group]||{}).name || '')} · ${esc(x.business)} · ${new Date(x.started).toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'})}</small></span>
+    <span class="pill s${x.stage}">${x.score ?? 0} คะแนน · ${esc(STAGES[x.stage-1] || '')}</span></button>`).join('') || '<div class="empty">ยังไม่มีแชต</div>';
+  [...$('teamHist').querySelectorAll('.hrow')].forEach((b, i) => { b.querySelector('.tn').textContent = nm(all[i].uid) + ' ↔ ' + all[i].lead;
+    b.onclick = async () => { try { const s = await open(b.dataset.u, b.dataset.id); if (s) result(s, true); } catch { b.querySelector('small').textContent = 'เปิดแชตนี้ไม่ได้ ลองใหม่อีกครั้ง'; } }; });
+}
+// Accounts (server login only): promote to team lead, reset a forgotten password.
+async function members(){
+  let users = [];
+  try { users = (await api('admin', { action:'users' })).users || []; } catch { return; }
+  $('members').innerHTML = `<span class="eyebrow">บัญชีในทีม</span><div style="overflow-x:auto"><table class="ttable"><tr><th>ชื่อผู้ใช้</th><th>สิทธิ์</th><th>ใช้ล่าสุด</th><th></th></tr>` +
+    users.map(u => `<tr data-id="${esc(u.id)}"><td class="un"></td><td>${u.role === 'admin' ? 'หัวหน้าทีม' : 'สมาชิก'}</td><td>${u.lastSeen ? new Date(num(u.lastSeen)).toLocaleDateString('th-TH',{dateStyle:'short'}) : '–'}</td>
+      <td><button class="btn ghost mini" data-act="role">${u.role === 'admin' ? 'ลดเป็นสมาชิก' : 'ตั้งเป็นหัวหน้าทีม'}</button> <button class="btn ghost mini" data-act="pass">ตั้งรหัสใหม่</button></td></tr>`).join('') + '</table></div><div class="err" id="memErr"></div>';
+  [...$('members').querySelectorAll('tr[data-id]')].forEach((tr, i) => {
+    tr.querySelector('.un').textContent = users[i].name;
+    tr.querySelector('[data-act=role]').onclick = async () => { try { await api('admin', { action:'setRole', id: users[i].id, role: users[i].role === 'admin' ? 'member' : 'admin' }); members(); } catch (e) { $('memErr').textContent = e.message; } };
+    tr.querySelector('[data-act=pass]').onclick = () => {
+      const cell = tr.lastElementChild; cell.innerHTML = '<input class="pw" type="text" placeholder="รหัสใหม่" style="width:110px"> <button class="btn mini">บันทึก</button>';
+      cell.querySelector('button').onclick = async () => { const pw = cell.querySelector('input').value; try { await api('admin', { action:'resetPass', id: users[i].id, pass: pw }); cell.textContent = 'ตั้งรหัสใหม่เป็น "' + pw + '" แล้ว แจ้งเจ้าตัวได้เลย'; } catch (e) { $('memErr').textContent = e.message; } };
+    };
+  });
+}
+let REG = false;
+function loginTab(reg){ REG = reg; $('tabLogin').setAttribute('aria-selected', !reg); $('tabReg').setAttribute('aria-selected', reg); $('codeRow').hidden = !reg; $('loginSubmit').textContent = reg ? 'สมัครและเข้าสนาม' : 'เข้าสู่ระบบ'; $('passInput').autocomplete = reg ? 'new-password' : 'current-password'; $('loginErr').textContent = ''; }
+$('tabLogin').onclick = () => loginTab(false); $('tabReg').onclick = () => loginTab(true);
+$('logoutBtn').onclick = async () => { try { await api('auth', { action:'logout' }); } catch {} store.set('rp:token', null); token = null; me = null; show('vLogin'); };
+$('loginForm').onsubmit = async e => {
+  e.preventDefault(); $('loginErr').textContent = '';
+  try { const j = await api('auth', { action: REG ? 'register' : 'login', name: $('nameInput').value, pass: $('passInput').value, code: $('codeInput').value }); token = j.token; store.set('rp:token', token); me = j.user; $('passInput').value = ''; lobby(); }
+  catch (err) { $('loginErr').textContent = err.message; }
+};
+$('homeBtn').onclick = () => { if (S && !S.ended && S.messages.some(m => m.from === 'admin') && !$('homeBtn').dataset.sure) { $('homeBtn').dataset.sure = 1; $('homeBtn').textContent = 'กดอีกครั้งเพื่อออก (แชตยังไม่จบ)'; return; } delete $('homeBtn').dataset.sure; $('homeBtn').textContent = 'หน้าหลัก'; lobby(); };
+
+/* ---------- lobby ---------- */
+async function lobby(){
+  clearInterval(waitTimer); S = null;
+  $('whoName').textContent = me ? (isLead() ? 'หัวหน้าทีม: ' : 'แอดมิน: ') + me.name : '';
+  $('localNote').hidden = !(LOCAL && !LOCAL.db);
+  show('vLobby');
+  let list = [];
+  try { list = ((await api('play', { action:'mine' })).sessions || []).map(clean); } catch {}
+  const done = list.filter(s => s.ended);
+  $('kTotal').textContent = done.length;
+  $('kDemo').textContent = done.length ? Math.round(done.filter(s => s.stage >= 5).length / done.length * 100) + '%' : '–';
+  const reals = done.filter(s => s.mode === 'real' && s.readOk != null);
+  $('kRead').textContent = reals.length ? Math.round(reals.filter(s => s.readOk).length / reals.length * 100) + '%' : '–';
+  $('kAvg').textContent = done.length ? Math.round(done.reduce((a,s) => a + (s.score ?? s.stage * 20), 0) / done.length) : '–';
+  $('funnel').innerHTML = STAGES.map((n,i) => { const c = done.filter(s => s.stage >= i+1).length; const p = done.length ? c/done.length*100 : 0;
+    return `<div class="frow"><span>${n}</span><div class="fbar"><i style="width:${p}%"></i></div><em>${c}</em></div>`; }).join('');
+  $('hist').innerHTML = list.length ? list.map(s => `<button class="hrow" data-id="${esc(s.id)}"><span class="av">${esc(s.avatar)}</span>
+      <span style="min-width:0"><b>${esc(s.lead)}</b><small>${esc(s.business)} · ${s.ended ? esc(REASON[s.endReason] || '') : 'ยังคุยค้างอยู่'} · ${new Date(s.started).toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'})}</small></span>
+      <span class="pill s${s.stage}">${s.mode === 'real' && s.readOk != null ? (s.readOk ? '✓ ' : '✗ ') : ''}${s.ended ? (s.score ?? s.stage*20) + ' คะแนน · ' : ''}${esc(STAGES[s.stage-1] || 'ยังไม่ตอบ')}</span></button>`).join('')
+    : '<div class="empty">ยังไม่มีแชต กด "รับแชต" เพื่อเริ่มรอบแรก</div>';
+  for (const b of document.querySelectorAll('.hrow')) b.onclick = async () => { try { const s = await api('play', { action:'get', id: b.dataset.id }); s.ended ? result(s) : arena(s, true); } catch {} };
+}
+
+const ST = Object.fromEntries((window.STRATEGIES || []).map(t => [t.id, t]));
+function renderGuide(){
+  $('strats').innerHTML = (window.STRATEGY_STAGES || []).map(stage => `<section class="stg"><h2>${esc(stage === 'follow-up' ? 'เมื่อลีดเงียบ (follow-up)' : 'ขั้น' + stage)}</h2>
+    <div class="groups">${(window.STRATEGIES || []).filter(t => t.stage === stage).map(t => `<article class="gcard">
+      <h3>${esc(t.name)}</h3><p>${esc(t.why)}</p><dl><dt>ทำยังไง</dt><dd>${esc(t.how)}</dd></dl>
+      <div class="ex ok"><b>✓ พิมพ์แบบนี้</b>${esc(t.good)}</div><div class="ex no"><b>✗ ไม่ใช่แบบนี้</b>${esc(t.bad)}</div>
+      <small class="src">ที่มา: ${esc(t.src)}</small></article>`).join('')}</div></section>`).join('');
+  $('qs').innerHTML = (window.STRATEGY_STAGES || []).map(stage => `<div><b>${esc(stage)}</b><span>${(window.STRATEGIES || []).filter(t => t.stage === stage).map(t => esc(t.name)).join(' · ')}</span></div>`).join('');
+  $('groups').innerHTML = Object.values(G).map(g => `<article class="gcard">
+    <h3><span>${g.icon}</span>${esc(g.name)}</h3><p>${esc(g.who)}</p>
+    <div class="kw">${g.signals.map(k => `<span>${esc(k)}</span>`).join('')}</div>
+    <dl><dt>วิธีตอบ</dt><dd>${esc(g.approach)}</dd><dt>ห้าม</dt><dd>${esc(g.avoid)}</dd><dt>ไปเดโม่</dt><dd>${esc(g.path)}</dd></dl>
+    <div class="say">${esc(g.line)}</div></article>`).join('');
+  $('qg').innerHTML = Object.values(G).map(g => `<div><b>${g.icon} ${esc(g.name)}</b><span>"${g.signals.slice(0,3).map(esc).join('", "')}" → ${esc(g.approach.split(' ').slice(0,1)[0])}…</span></div>`).join('');
+}
+$('mPractice').onclick = () => setMode('practice');
+$('mReal').onclick = () => setMode('real');
+$('mGhost').onclick = () => setMode('ghost');
+function guideTab(t){ $('tabStrat').setAttribute('aria-selected', t === 'strat'); $('tabGroups').setAttribute('aria-selected', t === 'groups'); $('paneStrat').hidden = t !== 'strat'; $('paneGroups').hidden = t !== 'groups'; }
+$('tabStrat').onclick = () => guideTab('strat'); $('tabGroups').onclick = () => guideTab('groups');
+$('guideBtn').onclick = () => { guideTab('strat'); show('vGuide'); };
+for (const b of document.querySelectorAll('.guideStart')) b.onclick = () => { lobby(); $('startBtn').click(); };
+
+$('startBtn').onclick = async () => {
+  const b = $('startBtn'); b.disabled = true; b.textContent = 'ลีดกำลังพิมพ์…'; $('startErr').textContent = '';
+  try { arena(await api('play', { action:'start', mode: MODE === 'practice' ? 'practice' : 'real', challenge: MODE === 'ghost' ? 'ghost' : null })); }
+  catch (err) { $('startErr').textContent = err.message; }
+  finally { b.disabled = false; b.textContent = 'รับแชต'; }
+};
+
+/* ---------- arena ---------- */
+function arena(s, resume){
+  S = clean(s); shown = resume ? s.messages.length : 0; delete $('endBtn').dataset.noguess;
+  $('modeTag').textContent = s.challenge === 'ghost' ? 'ชาเลนจ์ลีดเงียบ' : s.mode === 'real' ? 'โหมดจริง' : 'โหมดฝึก'; $('modeTag').className = 'mode-tag' + (s.mode === 'real' ? ' real' : '');
+  renderGuess(s.guess);
+  $('cAv').textContent = s.lead.avatar; $('cName').textContent = s.lead.display_name; $('cSrc').textContent = 'มาจาก ' + s.lead.ad;
+  $('leadbox').innerHTML = `<span>ที่คุณรู้ตอนนี้</span><strong>${esc(s.lead.display_name)}</strong><span>เห็น${esc(s.lead.ad)}</span><span>นอกนั้นต้องถามเอาเอง</span>`;
+  $('msgs').innerHTML = `<div class="sys">${esc(s.lead.display_name)} ทักเข้ามาทาง LINE OA · ${new Date(s.started).toLocaleTimeString('th-TH',{timeStyle:'short'})}</div>`;
+  if (resume) s.messages.forEach(addBubble);
+  ladder(s.stage); show('vArena');
+  if (!resume) revealNew(); else if (s.endReason && !s.ended) finishChat(); else tickWait();
+  syncDelay(); $('ideaBtn').hidden = s.mode !== 'practice'; $('ideas').hidden = true;
+  $('txt').value = ''; $('txt').focus();
+}
+
+function renderGuess(cur){
+  $('guessOpts').innerHTML = Object.values(G).map(g => `<button type="button" data-g="${g.id}" aria-pressed="${g.id === cur}">${g.icon} ${esc(g.name)}</button>`).join('');
+  for (const b of $('guessOpts').children) b.onclick = () => {
+    if (!S || S.ended) return;
+    S.guess = S.guess === b.dataset.g ? null : b.dataset.g; renderGuess(S.guess);
+    api('play', { action:'guess', id:S.id, guess:S.guess }).catch(() => {});
+  };
+}
+function ladder(stage, flashFrom){
+  $('ladder').innerHTML = STAGES.map((n,i) => `<div class="step ${i < stage ? 'done' : i === stage ? 'next' : ''} ${i === 4 ? 'goal' : ''} ${flashFrom != null && i >= flashFrom && i < stage ? 'flash' : ''}">
+    <span class="dot">${i < stage ? '✓' : i+1}</span><span><b>${n}</b><small>${STAGE_HINT[i]}</small></span></div>`).join('');
+}
+
+function addBubble(m){
+  const d = document.createElement('div'); d.className = 'b ' + m.from; d.innerHTML = marked(m.text, m.signals); $('msgs').append(d);
+  for (const sg of m.signals || []) if (sg.hint) { const h = document.createElement('div'); h.className = 'hint'; h.textContent = '💡 ' + sg.hint; $('msgs').append(h); }
+  if (m.from === 'admin') {
+    const bits = [];
+    if (m.delay && m.delay !== 'now') bits.push(DELAY_LABEL[m.delay] || '');
+    if (m.waited != null) bits.push('ตอบใน ' + fmt(m.waited) + (late(m.waited) ? ' · หัก ' + late(m.waited) : ''));
+    if (m.seen) bits.push('อ่านแล้ว');
+    if (bits.length) { const t = document.createElement('div'); t.className = 'meta'; t.textContent = bits.join(' · '); $('msgs').append(t); }
+  }
+  $('msgs').scrollTop = $('msgs').scrollHeight;
+}
+const DELAY_LABEL = { '1h':'ส่งหลัง 1 ชม.', evening:'ส่งตอนเย็น', tomorrow:'ส่งพรุ่งนี้เช้า', '3d':'ส่งหลัง 3 วัน' };
+let DELAY = 'now';
+function setDelay(d){ DELAY = d; for (const b of $('delayRow').querySelectorAll('button')) b.setAttribute('aria-pressed', b.dataset.d === d); }
+for (const b of document.querySelectorAll('#delayRow button')) b.onclick = () => setDelay(b.dataset.d);
+// Timing options only make sense while the lead is silent.
+function syncDelay(){ const last = S && S.messages[S.messages.length - 1]; $('delayRow').hidden = !(last && last.from === 'admin' && !S.ended && !S.endReason); if ($('delayRow').hidden) setDelay('now'); }
+// Practice mode: ask the coach for next-message ideas; tapping one drops it in the box to edit.
+$('ideaBtn').onclick = async () => {
+  if (!S || busy || S.ended) return;
+  const box = $('ideas'); box.hidden = false; box.innerHTML = '<div class="ih"><span>โค้ชกำลังคิดข้อความถัดไป…</span></div>';
+  try {
+    const { ideas } = await api('play', { action:'suggest', id:S.id });
+    box.innerHTML = `<div class="ih"><span>เลือกแล้วแก้ให้เป็นสำนวนของคุณก่อนส่ง</span><button type="button" id="ideasClose">ปิด</button></div>` +
+      (ideas || []).map((x, i) => `<button type="button" class="idea" data-i="${i}"><span class="tg">${esc((ST[x.tactic] || {}).name || 'ไอเดีย')}</span>${esc(x.text)}<span class="wy">${esc(x.why)}</span></button>`).join('');
+    $('ideasClose').onclick = () => { box.hidden = true; };
+    for (const b of box.querySelectorAll('.idea')) b.onclick = () => { $('txt').value = ideas[b.dataset.i].text; $('txt').dispatchEvent(new Event('input')); $('txt').focus(); box.hidden = true; };
+  } catch (err) { box.innerHTML = `<div class="ih"><span>${esc(err.message)}</span><button type="button" onclick="this.closest('.ideas').hidden=true">ปิด</button></div>`; }
+};
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function typing(on){ let t = $('typing'); if (on && !t) { t = document.createElement('div'); t.id = 'typing'; t.className = 'typing'; t.innerHTML = '<i></i><i></i><i></i>'; $('msgs').append(t); $('msgs').scrollTop = $('msgs').scrollHeight; } if (!on && t) t.remove(); }
+
+async function revealNew(){
+  const fresh = S.messages.slice(shown); shown = S.messages.length;
+  for (const m of fresh) {
+    if (m.from === 'admin') continue;
+    typing(true); await sleep(Math.min(500 + m.text.length * 30, 2400)); typing(false); addBubble(m);
+  }
+  tickWait();
+}
+
+function fmt(sec){ return Math.floor(sec/60) + ':' + String(sec%60).padStart(2,'0'); }
+function tickWait(){
+  clearInterval(waitTimer);
+  const last = [...S.messages].reverse().find(m => m.from === 'lead');
+  const lastAny = S.messages[S.messages.length - 1];
+  const w = $('wait');
+  if (!last || lastAny.from === 'admin' || S.ended) { w.textContent = 'รอลีดตอบ'; w.className = 'wait'; return; }
+  const since = Math.min(last.ts || Date.now(), Date.now());
+  const f = () => { const s = Math.round((Date.now() - since) / 1000), p = late(s); w.textContent = 'ลีดรอ ' + fmt(s) + (p ? ' · −' + p : ''); w.className = 'wait' + (s > 600 ? ' w2' : s > GRACE ? ' w1' : ''); };
+  f(); waitTimer = setInterval(f, 1000);
+}
+
+// On touch keyboards Enter makes a new line (people send with the button); on desktop Enter sends.
+const TOUCH = window.matchMedia && matchMedia('(pointer:coarse)').matches;
+if (TOUCH || innerWidth < 760) $('txt').placeholder = 'พิมพ์ตอบลีด…';
+$('txt').addEventListener('keydown', e => { if (!TOUCH && e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('compose').requestSubmit(); } });
+function sheet(open){ $('sheet').classList.toggle('open', open); $('scrim').hidden = !open; }
+$('sheetBtn').onclick = () => sheet(true); $('sheetClose').onclick = () => sheet(false); $('scrim').onclick = () => sheet(false);
+$('txt').addEventListener('input', e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; });
+$('compose').onsubmit = async e => {
+  e.preventDefault();
+  const text = $('txt').value.trim(); if (!text || busy || !S || S.ended) return;
+  busy = true; $('txt').value = ''; $('txt').style.height = 'auto'; clearInterval(waitTimer); $('ideas').hidden = true;
+  const lastLead = [...S.messages].reverse().find(m => m.from === 'lead');
+  const prevMsg = S.messages[S.messages.length - 1], delay = prevMsg && prevMsg.from === 'admin' ? DELAY : 'now';
+  const optimistic = { from:'admin', text, delay, waited: prevMsg && prevMsg.from === 'lead' ? Math.round((Date.now() - prevMsg.ts) / 1000) : null };
+  addBubble(optimistic); $('wait').textContent = 'รอลีดตอบ'; $('wait').className = 'wait';
+  await sleep(400); typing(true);
+  try {
+    const prev = S.stage, sent = S, pick = S.guess ?? null;
+    const s = await api('play', { action:'say', id:S.id, text, guess: pick, delay });
+    if (S !== sent) return; // the admin left this chat while the lead was typing
+    typing(false); shown += 1; // the admin bubble is already on screen
+    // A group picked while the lead was typing wins over the guess echoed back.
+    const keep = sent.guess ?? null; S = s; S.guess = keep; renderGuess(keep);
+    if (keep !== pick) api('play', { action:'guess', id:S.id, guess:keep }).catch(() => {});
+    const before = shown; await revealNew(); ladder(s.stage, prev);
+    if (shown === before && !s.endReason) { // read, no reply
+      $('msgs').insertAdjacentHTML('beforeend', `<div class="seen">อ่านแล้ว</div><div class="sys">ลีดอ่านแล้วแต่ยังไม่ตอบ ลองส่งข้อความที่ตอบง่ายกว่าเดิม หรือเลือกเวลาส่งให้เหมาะ</div>`);
+      $('msgs').scrollTop = $('msgs').scrollHeight;
+    }
+    syncDelay();
+    if (s.endReason || s.ended) { $('msgs').insertAdjacentHTML('beforeend', `<div class="sys">${esc(REASON[s.endReason] || 'จบแชต')}</div>`); $('msgs').scrollTop = $('msgs').scrollHeight; await sleep(1600); busy = false; return s.ended ? result(s) : finishChat(); }
+  } catch (err) {
+    // The lead never got it: take the bubble back so a resend doesn't show twice.
+    typing(false); const bs = $('msgs').querySelectorAll('.b.admin'); const lastB = bs[bs.length - 1];
+    if (lastB) { if (lastB.nextElementSibling && lastB.nextElementSibling.classList.contains('meta')) lastB.nextElementSibling.remove(); lastB.remove(); }
+    $('msgs').insertAdjacentHTML('beforeend', `<div class="sys">ส่งไม่สำเร็จ: ${esc(err.message)}</div>`); $('txt').value = text; tickWait();
+  } finally { busy = false; }
+};
+
+$('endBtn').onclick = async () => {
+  if (!S || busy) return;
+  const b = $('endBtn');
+  // Real mode trains reading the lead: ask for a guess before scoring.
+  if (S.mode === 'real' && !S.guess && !b.dataset.noguess) { b.dataset.noguess = 1; $('msgs').insertAdjacentHTML('beforeend', '<div class="sys">โหมดจริง: เลือกก่อนว่าลีดคนนี้อยู่กลุ่มไหน (แถบซ้าย) แล้วค่อยจบแชต หรือกดจบอีกครั้งเพื่อข้าม</div>'); $('msgs').scrollTop = $('msgs').scrollHeight; $('guessOpts').scrollIntoView({ behavior:'smooth', block:'center' }); return; }
+  if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'ยืนยันจบแชต'; setTimeout(() => { delete b.dataset.sure; b.innerHTML = 'จบแชต<span class="lg">และดูผล</span>'; }, 3000); return; }
+  delete b.dataset.sure; b.innerHTML = 'จบแชต<span class="lg">และดูผล</span>';
+  finishChat();
+};
+async function finishChat(){
+  if (!S || busy) return;
+  busy = true; clearInterval(waitTimer);
+  $('vResult').innerHTML = '<div class="loading"><div class="spin"></div>หัวหน้าทีมกำลังอ่านแชตของคุณ…</div>'; show('vResult');
+  try { result(await api('play', { action:'end', id:S.id, guess: S.guess ?? null })); }
+  catch (err) { $('vResult').innerHTML = `<div class="loading">${esc(err.message)}<button class="btn" id="errBack">กลับหน้าหลัก</button></div>`; $('errBack').onclick = lobby; }
+  finally { busy = false; }
+}
+
+/* ---------- result ---------- */
+function result(s, fromTeam){
+  clearInterval(waitTimer); S = clean(s); show('vResult');
+  const r = s.result || {}; const lc = r.lead_card || {}; const win = s.stage >= 5; const score = s.score ?? s.stage * 20; const gr = G[s.group || (s.dims || {}).group];
+  const miss = v => !v || /ยังไม่ได้/.test(v) ? `<span class="miss">${esc(v || '— ยังไม่ได้')}</span>` : esc(v);
+  const row = (k, v) => `<dt>${k}</dt><dd>${miss(v)}</dd>`;
+  const d = s.dims || {};
+  $('vResult').innerHTML = `<div class="result">
+    <div class="score">
+      <div class="big">${score}<small>/100</small></div>
+      <div><span class="eyebrow">${esc(REASON[s.endReason] || '')} · ขั้น ${s.stage}/5 = ${s.stage*20} คะแนน${s.penalty ? ` · ตอบช้าเกิน 5 นาที ${s.late} ครั้ง หัก ${s.penalty}` : ' · ตอบทันเวลาทุกข้อความ'}</span>
+        <h2>${win ? 'ส่งลีดต่อให้เซลส์ได้แล้ว' : 'ไปถึงขั้น ' + esc(STAGES[s.stage-1] || 'ยังไม่ได้ตอบ')}</h2>
+        <p>${esc(r.verdict || '')}</p>
+        <div class="track ${win ? 'win' : ''}">${STAGES.map((_,i) => `<div class="${i < s.stage ? 'on' : ''}"></div>`).join('')}</div>
+        <div class="track-l">${STAGES.map(n => `<span>${n}</span>`).join('')}</div></div>
+    </div>
+    <div class="card handoff">
+      <div class="bar"><span class="eyebrow">ใบส่งต่อลีดให้เซลส์</span>${lc.lead_quality ? `<span class="grade">เกรดลีด ${esc(lc.lead_quality)}</span>` : ''}</div>
+      <dl>${row('ชื่อ', lc.name)}${row('ธุรกิจ', lc.business)}${row('ขนาด', lc.size)}${row('ติดต่อ', lc.contact)}${row('ผู้ตัดสินใจ', lc.decision_maker)}
+      ${row('ความต้องการ', lc.needs)}${row('ปัญหา', lc.pain)}${row('ข้อกังวล', lc.objections)}${row('แพ็กเกจที่น่าจะเหมาะ', lc.suggested_package)}${row('นัดเดโม่', lc.demo_when)}${row('โน้ต', lc.notes)}</dl>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+      <div class="card"><span class="eyebrow">ทำได้ดี</span><ul class="lst good">${(r.went_well||[]).map(x => `<li>${esc(x)}</li>`).join('') || '<li>—</li>'}</ul></div>
+      <div class="card"><span class="eyebrow">รอบหน้าลองแบบนี้</span><ul class="lst bad">${(r.to_improve||[]).map(x => `<li>${esc(x)}</li>`).join('') || '<li>—</li>'}</ul></div>
+      ${(r.fact_errors||[]).length ? `<div class="card"><span class="eyebrow">ข้อมูลที่พูดผิด</span><div class="fe">${r.fact_errors.map(f => `<div><b>คุณพูด:</b> ${esc(f.said)}<br><b>ที่ถูก:</b> ${esc(f.correct)}</div>`).join('')}</div></div>` : ''}
+    </div>
+    ${r.turning_point && r.turning_point.admin_said ? `<div class="card span2"><span class="eyebrow">จุดเปลี่ยนของแชตนี้</span>
+      <div class="tp"><div class="b admin">${esc(r.turning_point.admin_said)}</div><div class="b better">${esc(r.turning_point.better_reply)}</div></div>
+      <p style="margin:0;color:var(--muted)">${esc(r.turning_point.why)}</p></div>` : ''}
+    ${gr ? `<div class="card span2"><span class="eyebrow">จับวิสัยลีด</span>
+      <div class="read"><div class="gi">${gr.icon}</div><div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+        <h2 style="font-size:20px">ลีดคนนี้คือ${esc(gr.name)}</h2>
+        <div>${s.guess ? (s.readOk ? `<span class="ok">✓ คุณเดาถูก</span>` : `<span class="no">✗ คุณเดาว่า ${esc((G[s.guess]||{}).name || '')}</span>`) : `<span style="color:var(--muted)">คุณไม่ได้เดากลุ่ม</span>`}</div>
+        ${r.group_read ? `<p style="margin:0">${esc(r.group_read)}</p>` : ''}
+        <div class="kw">${gr.signals.map(k => `<span>${esc(k)}</span>`).join('')}</div>
+        <p style="margin:0;font-size:14px"><b>วิธีตอบกลุ่มนี้:</b> ${esc(gr.approach)}<br><b>เส้นทางสู่เดโม่:</b> ${esc(gr.path)}</p>
+      </div></div>
+      ${(r.signal_review||[]).length ? `<span class="eyebrow">คีย์เวิร์ดในแชตนี้ กับสิ่งที่คุณตอบ</span><div class="sr">${r.signal_review.map(x => `<div><span class="${x.handled ? 'ok' : 'no'}">${x.handled ? '✓' : '✗'}</span><span><mark class="sig">${esc(x.quote)}</mark> ${esc(x.meaning)}<br><span style="color:var(--muted)">${esc(x.comment)}</span></span></div>`).join('')}</div>` : ''}
+    </div>` : ''}
+    ${(r.tactics||[]).length ? `<div class="card span2"><span class="eyebrow">กลยุทธ์การพิมพ์ในแชตนี้</span><div class="tac">${r.tactics.map(x => `<div><span class="${x.used ? 'ok' : 'no'}">${x.used ? '✓' : '○'}</span><span><b>${esc((ST[x.id] || {}).name || x.id)}</b>${x.quote ? `<br><span style="color:var(--muted)">คุณพิมพ์: "${esc(x.quote)}"</span>` : ''}<br>${esc(x.tip)}</span></div>`).join('')}</div></div>` : ''}
+    <div class="card span2"><span class="eyebrow">ย้อนดูแชต (ไฮไลต์ = คีย์เวิร์ดของลีด)</span>
+      <div class="replay">${s.messages.map(m => `<div class="b ${m.from}" style="animation:none">${marked(m.text, m.signals)}</div>${(m.signals||[]).filter(x => x.hint).map(x => `<div class="hint">💡 ${esc(x.hint)}</div>`).join('')}${m.from === 'admin' && m.waited != null ? `<div class="meta">ตอบใน ${fmt(m.waited)}${late(m.waited) ? ' · หัก ' + late(m.waited) : ''}</div>` : ''}`).join('')}</div></div>
+    <div class="card span2"><span class="eyebrow">เฉลย: ลีดคนนี้จริง ๆ คือ</span>
+      <div class="chips">${[d.business, d.size, d.who, d.personality, (d.temperature||'').split(' — ')[0], ...(d.objections||[])].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join('')}</div>
+      <div class="reveal">${esc(s.persona || '')}</div></div>
+    <div class="bar span2"><button class="btn ghost" id="backLobby">กลับหน้าหลัก</button><button class="btn" id="nextLead">รับลีดถัดไป</button></div>
+  </div>`;
+  $('backLobby').onclick = fromTeam ? team : lobby;
+  if (fromTeam) { $('backLobby').textContent = 'กลับหน้าทีม'; $('nextLead').hidden = true; }
+  $('nextLead').onclick = () => { lobby(); $('startBtn').click(); };
+}
+
+/* ---------- demo mode: scripted lead for previews without the API ---------- */
+const demo = { sessions: [] };
+function demoApi(path, p){
+  return new Promise(res => setTimeout(() => res(demoRoute(path, p)), path === 'play' && p.action === 'say' ? 900 : 200));
+}
+function demoRoute(path, p){
+  if (path === 'auth') return { token:'demo', user:{ name:'ตัวอย่าง' } };
+  if (p.action === 'mine') return { sessions: demo.sessions.map(s => ({ id:s.id, lead:s.lead.display_name, avatar:s.lead.avatar, business:'ร้านหมูกระทะ', started:s.started, ended:s.ended, stage:s.stage, endReason:s.endReason, score:s.score })) };
+  if (p.action === 'get') return demo.sessions.find(s => s.id === p.id);
+  if (p.action === 'start') {
+    const s = { id:'d' + Date.now(), started: Date.now(), stage:0, ended:false, mode: p.mode || 'practice', challenge: p.challenge || null, lead:{ display_name:'Nid 🌷', avatar:'🌷', ad:'โฆษณา "เปลี่ยนทุกสลิปเป็นแต้มอัตโนมัติ"' },
+      messages:[{ from:'lead', text:'สวัสดีค่ะ', ts:Date.now() }, { from:'lead', text:'อันนี้ใช้กับร้านเราได้ไหมคะ ราคาเท่าไหร่', ts:Date.now()+1 }], st:{ step:0 } };
+    demo.sessions.unshift(s); return s;
+  }
+  const s = demo.sessions.find(x => x.id === p.id);
+  if (p.action === 'say') {
+    const t = p.text, now = Date.now(), last = [...s.messages].reverse().find(m => m.from === 'lead');
+    s.messages.push({ from:'admin', text:t, ts:now, waited: Math.round((now - last.ts)/1000) });
+    const asks = /\?|ไหม|อะไร|ยังไง|กี่|เท่าไหร่|แบบไหน|ทำไม|มั้ย/.test(t);
+    let reply;
+    if (/เดโม่|demo|นัด|สาธิต/.test(t) && s.st.contact) { reply = ['ได้ค่ะ พฤหัสนี้บ่ายสองสะดวกนะคะ', 'ช่วงนั้นร้านยังไม่เปิด']; s.st.demo = true; }
+    else if (/เบอร์|ติดต่อ|โทร|ไลน์|line/i.test(t) && s.st.needs) { reply = ['เบอร์ 089-412-7750 ค่ะ ชื่อนิดนะคะ', 'โทรช่วงก่อน 4 โมงเย็นนะ']; s.st.contact = true; }
+    else if (asks && !s.st.needs) { reply = ['ร้านหมูกระทะค่ะ วันละร้อยกว่าโต๊ะ ลูกค้าโอนเกือบหมด', 'ช่วงนี้ขาประจำหายไปเยอะเลย ไม่รู้ไปกินเจ้าไหน']; s.st.needs = true; }
+    else if (t.length > 280) { reply = ['ยาวจัง เดี๋ยวขออ่านก่อนนะคะ']; s.left = true; }
+    else if (s.st.needs && !s.st.contact) reply = ['อ๋อ แบบนี้ก็น่าสนใจนะ', 'แล้วต้องทำยังไงต่อคะ'];
+    else reply = asks ? ['อ๋อค่ะ'] : ['แล้วมันช่วยร้านเจ๊ยังไงอะคะ'];
+    reply.forEach((r,i) => s.messages.push({ from:'lead', text:r, ts:Date.now()+i }));
+    s.stage = 2 + (s.st.needs ? 1 : 0) + (s.st.contact ? 1 : 0) + (s.st.demo ? 1 : 0);
+    if (s.st.demo) return demoFinish(s, 'demo');
+    if (s.left) return demoFinish(s, 'left');
+    return s;
+  }
+  if (p.action === 'end') return demoFinish(s, 'admin_ended');
+  if (p.action === 'suggest') return { ideas: [
+    { tactic:'choice_q', text:'ลูกค้าส่วนใหญ่จ่ายแบบโอน หรือเงินสดคะ', why:'ลีดตอบสั้น ให้ตัวเลือกจะตอบง่าย' },
+    { tactic:'quantify', text:'ถ้าขาประจำหายไปเดือนละ 30 โต๊ะ โต๊ะละ 650 ก็เกือบ 20,000 ต่อเดือนเลยนะคะ', why:'ลีดบอกว่าขาประจำหาย ตีเป็นเงินให้เห็นเอง' },
+    { tactic:'because', text:'ขอเบอร์ไว้ให้ทีมโทรช่วยคิดว่าร้านเสียลูกค้าไปเท่าไหร่ ใช้เวลา 10 นาทีค่ะ สะดวกช่วงไหนคะ', why:'ขอพร้อมเหตุผลและให้เลือกเวลาเอง' } ] };
+}
+function demoFinish(s, why){
+  s.ended = Date.now(); s.endReason = why;
+  const w = s.messages.filter(m => m.from === 'admin').map(m => m.waited || 0);
+  s.late = w.filter(x => x > GRACE).length; s.penalty = w.reduce((a,x) => a + late(x), 0); s.score = Math.max(0, s.stage * 20 - s.penalty);
+  const has = k => s.st[k];
+  s.dims = { business:'ร้านหมูกระทะ', size:'1 สาขาขายดี ลูกค้าวันละ 100+ คน', who:'เจ้าของร้านเอง ตัดสินใจได้ทันที', personality:'ยุ่งมาก ตอบสั้น ไม่อ่านข้อความยาว', temperature:'อุ่น — สนใจแต่ไม่รีบ', objections:['แพง'] };
+  s.persona = 'เจ๊นิด เจ้าของร้านหมูกระทะบางแค ลูกค้าวันละ 100+ โต๊ะ จ่ายเฉลี่ยโต๊ะละ 650 บาท ลูกค้าประจำหายราว 30 กลุ่ม/เดือน\nตอนนี้ใช้บัตรสะสมแต้มกระดาษ ปัญหาจริงคือไม่รู้ว่าใครเป็นขาประจำ\nยอมให้เบอร์ถ้าแอดมินถามเรื่องร้านก่อน ยอมนัดเดโม่ถ้าเห็นว่าดึงขาประจำกลับมาได้\n(นี่คือลีดตัวอย่างแบบสคริปต์ ลีดจริงบนเว็บของทีมสร้างโดย AI ใหม่ทุกครั้ง)';
+  s.result = {
+    verdict: has('demo') ? 'ถามเรื่องร้านก่อนเสนอขาย ลีดจึงยอมเปิดใจ ให้เบอร์ และนัดเดโม่' : has('needs') ? 'รู้ความต้องการแล้ว แต่ยังไม่ได้ขอคอนแทคหรือชวนนัดเดโม่' : 'ยังไม่ได้ถามเรื่องธุรกิจของลีด เลยไปต่อไม่ได้',
+    lead_card: { name: has('contact') ? 'คุณนิด' : '', business: has('needs') ? 'ร้านหมูกระทะ 1 สาขา บางแค' : '', size: has('needs') ? 'ลูกค้าวันละ 100+ โต๊ะ' : '', contact: has('contact') ? '089-412-7750 (โทรก่อน 16:00)' : '', decision_maker:'', needs: has('needs') ? 'อยากดึงลูกค้าประจำกลับมา ลูกค้าโอนจ่ายเกือบหมด' : '', pain: has('needs') ? 'ขาประจำหายโดยไม่รู้ตัว' : '', objections:'', suggested_package: has('needs') ? 'Plus (สลิปเยอะ ~2,800/เดือน)' : '', demo_when: has('demo') ? 'พฤหัสนี้ 14:00' : '', lead_quality: 'A', notes:'' },
+    went_well: has('needs') ? ['ถามเรื่องร้านก่อนตอบราคา'] : [],
+    to_improve: [!has('contact') && 'ขอเบอร์พร้อมเหตุผล เช่น "ให้ทีมโทรไปช่วยคำนวณว่าร้านเจ๊เสียลูกค้าประจำไปเดือนละเท่าไหร่"', !has('demo') && 'เสนอวันเวลาเดโม่ 2 ตัวเลือกให้ลีดเลือก'].filter(Boolean),
+    turning_point: { admin_said: (s.messages.find(m => m.from === 'admin') || {}).text || '', better_reply: 'ใช้ได้กับร้านส่วนใหญ่เลยค่ะ ขอถามนิดนึงนะคะ ร้านคุณนิดทำธุรกิจอะไร ลูกค้าส่วนใหญ่โอนจ่ายไหมคะ แล้วมีลูกค้าประจำเยอะไหม จะได้แนะนำแพ็กที่พอดีค่ะ', why:'ลีดถามราคา แต่ถ้าตอบราคาก่อนรู้ขนาดร้าน ลีดจะเทียบแค่ตัวเลข' },
+    fact_errors: [],
+  };
+  return s;
+}
+
+renderGuide(); setMode(MODE);
+boot();
+</script>
+
+</body></html>

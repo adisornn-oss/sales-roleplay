@@ -1,0 +1,3 @@
+{
+  "functions": { "api/play.js": { "maxDuration": 120 } }
+}
